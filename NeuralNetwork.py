@@ -20,20 +20,20 @@ class Node():
             Sum += (self.inputs[i] * self.weights[i])
         return Sum
 
-    def prepareOutput(self) -> None:
+    def processInput(self) -> None:
         x = self.summationFunction()
         self.output = self.activationFunction(x)
         self.inputs.clear() # clear inputs
 
     def sendOutput(self):
-        for node in self.connections:
+        for node in self.connections: # appends the output of the current node to the inputs to the nodes in connections
             node.inputs.append(self.output)
 
-    def initializeWeights(self , totalNumberOfWeights): # know inputs number
+    def initializeWeights(self , totalNumberOfWeights): # numberOfInputs needed
         for i in range(self.numberOfInputs):
             self.weights.append(random.uniform(-1/totalNumberOfWeights , 1/totalNumberOfWeights))
     
-    def setNumberOfInputs(self , numberOfInputs)->None:
+    def setNumberOfInputs(self , numberOfInputs)->None: # set number of inputs for current node
         self.numberOfInputs = numberOfInputs
 
 class Layer():
@@ -52,9 +52,9 @@ class Layer():
         otherLayerNodes = otherLayer.nodes
         list(map(lambda x : x.connections.extend(otherLayerNodes) , self.nodes)) # connect every node
     
-    def setNumberOfInputs(self,otherLayer) ->None:
-        otherLayerNodes = otherLayer.nodes
-        list(map(lambda x : x.setNumberOfInputs(len(self.nodes)), otherLayerNodes)) # set number of inputs for next layer with number of nodes in the current layer
+    def setNumberOfInputs(self,nextLayer) ->None: # set number of inputs for next layer with number of nodes in the current layer
+        nextLayerNodes = nextLayer.nodes
+        list(map(lambda x : x.setNumberOfInputs(len(self.nodes)), nextLayerNodes))
 
     def initializeLayerWeights(self , totalNumberOfWeights)->None:
         for node in self.nodes:
@@ -62,17 +62,18 @@ class Layer():
 
     def processInputs(self)->None:
         for node in self.nodes:
-            node.prepareOutput()
+            node.processInput()
 
     def sendOutputs(self)->list[float]:
-        for node in self.nodes:
-            node.sendOutput()
-        
-        outputs = []
         if self.type == 'output':
+            outputs = []
             for node in self.nodes:
                 outputs.append(node.output)
-        return outputs
+            return outputs
+        else: # input or hidden               
+            for node in self.nodes:
+                node.sendOutput()
+            return []
 
 class NeuralNetwork():
     def __init__(self , numOfNodesHidden:int = 4 , epochs:int = 1000)->None:
@@ -123,7 +124,7 @@ class NeuralNetwork():
 
     def fit(self , xtrain:ps.DataFrame , ytrain:ps.DataFrame)->None:
         i = 0
-        for row in xtrain.values:
+        for row in xtrain.values: # epoches missing
             for value in row:
                 self.layers[0].nodes[i].inputs.append(value)
                 i+=1 
@@ -134,6 +135,7 @@ class NeuralNetwork():
                     output = layer.sendOutputs()
                     if output:
                         self.outputs.extend(output)
+        
         
         
 
