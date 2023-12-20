@@ -10,6 +10,7 @@ class Node():
         self.weights = []
         self.output = 0
         self.numberOfInputs = 0
+        self.error = 0
     
     def activationFunction(self , x):
         return 1 / (1 + np.exp(-x))
@@ -23,11 +24,15 @@ class Node():
     def processInput(self) -> None:
         x = self.summationFunction()
         self.output = self.activationFunction(x)
-        self.inputs.clear() # clear inputs
 
     def sendOutput(self):
         for node in self.connections: # appends the output of the current node to the inputs to the nodes in connections
             node.inputs.append(self.output)
+
+    def setWeightsOne(self):
+        self.weights.clear()
+        for i in range(self.numberOfInputs):
+            self.weights.append(1)
 
     def initializeWeights(self , totalNumberOfWeights): # numberOfInputs needed
         for i in range(self.numberOfInputs):
@@ -35,6 +40,25 @@ class Node():
     
     def setNumberOfInputs(self , numberOfInputs)->None: # set number of inputs for current node
         self.numberOfInputs = numberOfInputs
+
+    def clearInputs(self):
+        self.inputs.clear()
+
+    def adjustTheWeights(self):
+        for iterator in range(len(self.weights)):
+            self.weights[iterator] += ((self.error * self.inputs[iterator]) * 0.5)
+
+    def backPropagate(self, type:str , target:float, index:int)->None:
+        if type == 'output':
+            self.error = self.output*(1-self.output) *(target -self.output)
+        else:
+            self.error = self.output*(1-self.output)
+            Sum = 0
+            for node in self.connections:
+                Sum +=  (node.error * node.weights[index])
+            self.error *= Sum
+
+        self.adjustTheWeights()
 
 class Layer():
     def __init__(self , type:str , numOfNodes:int)->None:
@@ -57,6 +81,11 @@ class Layer():
         list(map(lambda x : x.setNumberOfInputs(len(self.nodes)), nextLayerNodes))
 
     def initializeLayerWeights(self , totalNumberOfWeights)->None:
+        if self.type == 'input':
+            for node in self.nodes:
+                node.setWeightsOne()
+            return
+        
         for node in self.nodes:
             node.initializeWeights(totalNumberOfWeights)
 
@@ -74,6 +103,14 @@ class Layer():
             for node in self.nodes:
                 node.sendOutput()
             return []
+        
+    def clearLayerInputs(self):
+        for node in self.nodes:
+            node.clearInputs()
+
+    def backPropagateNodes(self , target:float)->None:
+        for index in range(len(self.nodes)):
+            self.nodes[index].backPropagate( self.type , target , index) # index for knowing hidden layer weight index
 
 class NeuralNetwork():
     def __init__(self , numOfNodesHidden:int = 4 , epochs:int = 1000)->None:
@@ -121,22 +158,68 @@ class NeuralNetwork():
     def intializeWeights(self)->None:
         for layer in self.layers:
             layer.initializeLayerWeights(self.totalNumberOfWeights)
+    
+    def clearNNInputs(self):
+        for layer in self.layers:
+            layer.clearLayerInputs()
+
+    def calculateError(self , ytrain:ps.DataFrame)->float:
+        result = 0
+        iterator = 0
+        for value in ytrain.values:
+            result += ((value - self.outputs[iterator]) ** 2)
+            iterator+=1
+        return result / 2
+    
+    def inititateBackPropagation(self,target:float)->None:
+        for iterator in range(len(self.layers)-1 , 0 , -1): # input layer excluded
+            self.layers[iterator].backPropagateNodes(target)
 
     def fit(self , xtrain:ps.DataFrame , ytrain:ps.DataFrame)->None:
-        i = 0
-        for row in xtrain.values: # epoches missing
-            for value in row:
-                self.layers[0].nodes[i].inputs.append(value)
-                i+=1 
-                i %= self.inputLayersNodes
+        iterator = 0
 
-            for layer in self.layers:
-                    layer.processInputs()
-                    output = layer.sendOutputs()
-                    if output:
-                        self.outputs.extend(output)
-        
-        
+        for epoch in range(self.epochs):
+            for row in xtrain.values:
+                for value in row:
+                    self.layers[0].nodes[iterator].inputs.append(value)
+                    iterator+=1 
+                    iterator %= self.inputLayersNodes
+
+                for layer in self.layers:
+                        layer.processInputs()
+                        output = layer.sendOutputs()
+                        if output:
+                            self.outputs.extend(output)
+
+                self.clearNNInputs()
+
+            print(f"Before: {self.calculateError(ytrain)}")
+            self.outputs.clear()
+
+            iterator = 0
+            secondIterator = 0
+            targets = ytrain.values
+
+            for row in xtrain.values:
+                for value in row:
+                    self.layers[0].nodes[iterator].inputs.append(value)
+                    iterator+=1 
+                    iterator %= self.inputLayersNodes
+
+                for layer in self.layers:
+                        layer.processInputs()
+                        output = layer.sendOutputs()
+
+                self.inititateBackPropagation(targets[secondIterator])
+                secondIterator += 1
+                self.clearNNInputs()
+            
+
+
+
+                
+
+    
         
 
 
