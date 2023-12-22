@@ -23,7 +23,7 @@ targets = data["concrete_compressive_strength"]
 # print(targets)
 xtrain , xtest , ytrain , ytest = train_test_split(features , targets , test_size=0.25 , random_state=42)
 
-NN = NeuralNetwork(epochs=10000 , lr = 0.5)
+NN = NeuralNetwork(epochs=100 , lr = 0.5)
 NN.fit(xtrain , ytrain)
 
 ypredict = NN.predict(xtest)

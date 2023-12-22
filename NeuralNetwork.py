@@ -121,8 +121,8 @@ class Layer():
             self.nodes[index].backPropagate( self.type , target , index) # index for knowing hidden layer weight index
 
 class NeuralNetwork():
-    def __init__(self , numOfNodesHidden:int = 4 , epochs:int = 1000 , lr:float = 0.5 , layersNum:int = 3)->None:
-        self.layersNum = layersNum
+    def __init__(self , numOfNodesHidden:int = 4 , epochs:int = 1000 , lr:float = 0.5)->None:
+        self.layersNum = 3
         self.inputLayersNodes = 4
         self.outputLayersNodes = 1
         self.numOfNodesHidden = numOfNodesHidden
