@@ -22,10 +22,13 @@ class Node():
         for i in range(len(self.inputs)):
             Sum += (self.inputs[i] * self.weights[i])
         return Sum
+    
+    def RELUActivation(self , x:float)->float:
+        return max(0 , x)
 
-    def processInput(self) -> None:
+    def processInput(self , type) -> None:
         x = self.summationFunction() + self.bias
-        self.output = self.activationFunction(x)
+        self.output = self.activationFunction(x) if type == 'hidden' else self.RELUActivation(x)
 
     def sendOutput(self):
         for node in self.connections: # appends the output of the current node to the inputs to the nodes in connections
@@ -45,27 +48,28 @@ class Node():
     def clearInputs(self):
         self.inputs.clear()
 
-    def adjustTheBias(self)->None:
+    def adjustTheBias(self , type)->None:
         self.bias += (self.error * self.lr) # adjust the bias
 
-    def adjustTheWeights(self)->None:
+    def adjustTheWeights(self , type)->None:
+        if type == 'output':
+            return
         for iterator in range(len(self.weights)):
             self.weights[iterator] += ((self.error * self.inputs[iterator]) * self.lr)
 
     def backPropagate(self, type:str , target:float, index:int)->None:
-        self.error = self.output*(1-self.output)
-
         if type == 'output':
-            self.error *= (target -self.output)
+            self.error = (target - self.output)
         else:
+            self.error = self.output*(1-self.output)
             Sum = 0
             for node in self.connections:
                 Sum +=  (node.error * node.weights[index])
 
             self.error *= Sum
 
-        self.adjustTheWeights()
-        self.adjustTheBias()
+        self.adjustTheWeights(type)
+        self.adjustTheBias(type)
 
 class Layer():
     def __init__(self , type:str , numOfNodes:int , lr:float)->None:
@@ -89,7 +93,7 @@ class Layer():
         list(map(lambda x : x.setNumberOfInputs(len(self.nodes)), nextLayerNodes))
 
     def initializeLayerWeights(self , totalNumberOfWeights)->None:
-        if self.type == 'input':
+        if self.type == 'input' or self.type == 'output':
             for node in self.nodes:
                 node.setWeightsOne()
             return
@@ -99,7 +103,7 @@ class Layer():
 
     def processInputs(self)->None:
         for node in self.nodes:
-            node.processInput()
+            node.processInput(self.type)
 
     def sendOutputs(self)->list[float]:
         if self.type == 'output':
