@@ -209,6 +209,8 @@ class NeuralNetwork():
     def fit(self , xtrain:ps.DataFrame , ytrain:ps.DataFrame)->None:
         iterator = 0
         for epoch in range(self.epochs):
+            output = self.predict(xtrain)
+            print(f'MSE: {self.MSE(output , ytrain)}')
             iterator = 0
             secondIterator = 0
             targets = ytrain.values

@@ -32,7 +32,9 @@ NN.fit(xtrain , ytrain)
 
 ypredict = NN.predict(xtest)
 print(ypredict)
-print(NN.MSE(ypredict , ytest))
+print()
+print(f"MSE: {NN.MSE(ypredict , ytest)}")
+print(f"Error: {NN.calculateError(ypredict , ytest)}")
 
 r2 = r2_score(ytest, ypredict)
 print(f'R2 Score: {r2}')
