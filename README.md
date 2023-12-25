@@ -14,7 +14,44 @@ Main class that brings together layers to form a complete neural network.
 Includes methods for training the network (fitting) and making predictions.
 
 ## Usage
-https://github.com/MoayadR/Regression-Using-a-Neural-Network/blob/2d04270dcf2733a906bc57e567672175cc36b38b/__init__.py#L1C1-L41
+```python
+import pandas as ps
+from sklearn.preprocessing import MinMaxScaler , StandardScaler , RobustScaler
+from sklearn.model_selection import train_test_split
+from NeuralNetwork import NeuralNetwork
+from sklearn.metrics import r2_score
+
+# read data
+data = ps.read_excel('concrete_data.xlsx' , sheet_name='concrete_data')
+
+# drop missing values
+data = data.dropna()
+
+#normalize the data
+scaler = MinMaxScaler()
+
+features = data.drop(columns=["concrete_compressive_strength"] , axis=1)
+targets = data["concrete_compressive_strength"]
+
+xtrain , xtest , ytrain , ytest = train_test_split(features , targets , test_size=0.25 , random_state=42)
+
+xtrain = ps.DataFrame(scaler.fit_transform(xtrain))
+xtest = ps.DataFrame(scaler.transform(xtest))
+
+NN = NeuralNetwork(epochs=100 , lr = 0.01 , numOfNodesHidden=128)
+print("Learning Phase:...")
+NN.fit(xtrain , ytrain)
+
+ypredict = NN.predict(xtest)
+print(ypredict)
+print()
+print(f"MSE: {NN.MSE(ypredict , ytest)}")
+print(f"Error: {NN.calculateError(ypredict , ytest)}")
+
+r2 = r2_score(ytest, ypredict)
+print(f'R2 Score: {r2}')
+
+```
 
 ## Parameters
 * numOfNodesHidden: Number of nodes in the hidden layer.
